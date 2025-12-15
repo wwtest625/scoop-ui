@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scoop Store - Search</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#197fe6",
+                        "background-light": "#f5f5f7", /* Apple-like light gray */
+                        "background-dark": "#111921",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e2936",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+                        'glow': '0 0 15px rgba(25, 127, 230, 0.3)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar to match the clean aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 overflow-hidden selection:bg-primary/30 selection:text-primary">
+<div class="flex h-screen w-full">
+<!-- Side Navigation -->
+<aside class="flex w-64 flex-col justify-between border-r border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/90 backdrop-blur-xl p-4 pt-6 hidden md:flex z-20">
+<div class="flex flex-col gap-6">
+<!-- Brand -->
+<div class="flex items-center gap-3 px-2">
+<div class="bg-center bg-no-repeat bg-cover rounded-xl shadow-sm size-10" data-alt="Abstract blue square logo with letter S" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCCSNIbqtlAIOZyI2BO8IMgqxZbbGI_jYGVHsOHoTsZpG73g03_jqXv5PdEBFoiIiZJbamVsyaJpWY38YspuutXJFAzyns6KwD3OpD-RrT5WP8hRQqCoVmmqRXPNnXdDHXTdDg58ywrwmMFBSU4D3kUjXX6CDD_CSMSmxN7bjcbmzCx6rsikLgvwyuoRMCMXP-qFeRUHTh9LZEIxJaYod1tB1i6ZuTcspH4jyYeNEl30tP7ooI5e9VYDgXHtRO7QDR9gkZGhC0GCBoH");'></div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-lg font-bold leading-none tracking-tight">Scoop UI</h1>
+<p class="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">Package Manager</p>
+</div>
+</div>
+<!-- Navigation Items -->
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:text-primary transition-colors">explore</span>
+<span class="text-sm font-medium">Discover</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:text-primary transition-colors">sports_esports</span>
+<span class="text-sm font-medium">Arcade</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:text-primary transition-colors">brush</span>
+<span class="text-sm font-medium">Create</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:text-primary transition-colors">work</span>
+<span class="text-sm font-medium">Work</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-primary font-semibold transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px] fill-1">search</span>
+<span class="text-sm">Search</span>
+</a>
+<div class="my-2 border-t border-slate-200 dark:border-slate-800"></div>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:text-primary transition-colors">update</span>
+<span class="text-sm font-medium">Updates</span>
+<span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+</a>
+</nav>
+</div>
+<!-- Bottom User Profile -->
+<div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 shrink-0" data-alt="User avatar silhouette" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuANH0k9CuZ0RpvpQPGB1G2dJl_5z0XPv_CjEi482nUdlorYNQubQnAmpS7RHCSDPjR5LaLiS-Lz1JkwmxwwXzaat3fXRate6J3c1nCy9ChLy5buDxToBqhNI9JiS-Rr6Aq6gWHjBXrGLrdgfaYycRt2XoQfXqdo6wT14qUth603RQarWZDkyeXBj0vL7EEpKVK_qZdGkHz0bw81zZAAVrHZZ2wM80TunVe8Hw0DRtzSHBHKkfPZ3SIZMtTCaktB4ctq7tI7VF3UPegJ");'></div>
+<div class="flex flex-col min-w-0">
+<p class="text-sm font-semibold truncate text-slate-900 dark:text-white">Admin User</p>
+<p class="text-xs text-slate-500 truncate">System Configured</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto relative scroll-smooth">
+<div class="max-w-[1200px] mx-auto px-6 md:px-12 py-8 md:py-12 flex flex-col gap-10">
+<!-- Page Heading -->
+<div class="flex flex-col gap-2 animate-fade-in-down">
+<h1 class="text-slate-900 dark:text-white text-4xl md:text-5xl font-black tracking-tighter">Search</h1>
+<p class="text-slate-500 dark:text-slate-400 text-lg">Find apps, utilities, and developer tools.</p>
+</div>
+<!-- Search Input Section -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 md:pl-6 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors text-[28px]">search</span>
+</div>
+<input autofocus="" class="w-full h-14 md:h-16 pl-14 md:pl-16 pr-6 rounded-2xl bg-white dark:bg-card-dark border-0 ring-1 ring-slate-200 dark:ring-slate-700 shadow-soft focus:ring-2 focus:ring-primary focus:shadow-glow transition-all text-lg placeholder:text-slate-400 text-slate-900 dark:text-white" placeholder="Games, Utilities, Development..." type="text"/>
+</div>
+<!-- Discovery Chips / Trending -->
+<div class="flex flex-col gap-4">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Discover</h2>
+<div class="flex flex-wrap gap-3">
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-primary font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-[18px] mr-2">trending_up</span>
+                            Trending
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            VS Code
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            Google Chrome
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            NodeJS
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            7zip
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            Python
+                        </button>
+<button class="flex items-center px-5 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            Firefox
+                        </button>
+</div>
+</div>
+<!-- Search Results Grid -->
+<div class="flex flex-col gap-6 pb-20">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Suggested Apps</h2>
+<button class="text-primary text-sm font-semibold hover:underline">See All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+<!-- Card 1 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-90" data-alt="Gradient blue to purple app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">code</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">Visual Studio Code</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">Code editing. Redefined.</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.9</span>
+<span class="mx-1">•</span>
+<span>Development</span>
+</div>
+</div>
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all shrink-0">
+                                Get
+                            </button>
+</div>
+<!-- Card 2 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 opacity-90" data-alt="Gradient yellow to orange app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">terminal</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">Windows Terminal</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">Modern command line tools</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.8</span>
+<span class="mx-1">•</span>
+<span>System</span>
+</div>
+</div>
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all shrink-0">
+                                Get
+                            </button>
+</div>
+<!-- Card 3 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-700 opacity-90" data-alt="Gradient green app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">folder_zip</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">7-Zip</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">High compression ratio archiver</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.7</span>
+<span class="mx-1">•</span>
+<span>Utility</span>
+</div>
+</div>
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all shrink-0">
+                                Get
+                            </button>
+</div>
+<!-- Card 4 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-600 opacity-90" data-alt="Gradient red to pink app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">play_circle</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">VLC Media Player</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">Open source multimedia player</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.9</span>
+<span class="mx-1">•</span>
+<span>Video</span>
+</div>
+</div>
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all shrink-0">
+                                Get
+                            </button>
+</div>
+<!-- Card 5 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-800 opacity-90" data-alt="Gradient indigo to purple app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">webhook</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">Discord</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">Talk, chat, and hang out</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.6</span>
+<span class="mx-1">•</span>
+<span>Social</span>
+</div>
+</div>
+<!-- Installed State -->
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 font-bold text-sm cursor-default shrink-0 uppercase text-[10px] tracking-wide">
+                                Installed
+                            </button>
+</div>
+<!-- Card 6 -->
+<div class="group flex items-center p-4 gap-4 rounded-2xl bg-white dark:bg-card-dark border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+<div class="size-16 rounded-xl shrink-0 bg-slate-100 overflow-hidden relative shadow-inner">
+<div class="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-600 opacity-90" data-alt="Gradient teal to cyan app icon background"></div>
+<span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-white text-3xl">science</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h3 class="font-bold text-slate-900 dark:text-white truncate">Postman</h3>
+<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">API Platform for developers</p>
+<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span>4.8</span>
+<span class="mx-1">•</span>
+<span>DevTools</span>
+</div>
+</div>
+<button class="px-5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-primary font-bold text-sm hover:bg-primary hover:text-white transition-all shrink-0">
+                                Get
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

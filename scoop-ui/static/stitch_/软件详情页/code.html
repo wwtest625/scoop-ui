@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Software Detail Page - Scoop UI</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#197fe6",
+                        "background-light": "#ffffff",
+                        "background-dark": "#111921",
+                        "surface-light": "#f5f5f7",
+                        "surface-dark": "#1c2630",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem", 
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for horizontal sections to keep it clean */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-surface-light dark:bg-background-dark min-h-screen text-slate-900 dark:text-white font-display">
+<!-- Top Navigation -->
+<div class="sticky top-0 z-50 w-full bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8">
+<header class="flex items-center justify-between h-14">
+<!-- Logo Area -->
+<div class="flex items-center gap-2 cursor-pointer group">
+<span class="material-symbols-outlined text-primary text-3xl">local_mall</span>
+<span class="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">Scoop UI</span>
+</div>
+<!-- Search Bar -->
+<div class="hidden sm:flex flex-1 max-w-md mx-8">
+<div class="relative w-full text-slate-500 focus-within:text-primary">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-1.5 border-none rounded-lg bg-slate-100 dark:bg-surface-dark text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" placeholder="Search apps, utilities..." type="text"/>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="flex items-center gap-6">
+<a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors hidden md:block" href="#">Discover</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary transition-colors hidden md:block" href="#">Updates</a>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-8 cursor-pointer ring-2 ring-transparent hover:ring-primary transition-all" data-alt="User profile avatar gradient" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuABr195K1teJjIovW0nc6qnB-et3YZD54690F7862UBUAlfYx7JRwbyxytvDXK68zFE2ympVR5f01nWUty2pxPJekO1uybi1VgSLxitU14pXl6iwdIq1oTFgm1jTXQVDKcQxtLdfR88sZnbg3uXXzTmFhXKLA1CdmmyUncyhk9XLflzW3MyQ8Uk-2MBLu2iVIjJzF3A0UjsB4GMsUg371E8CsPzZ8xVt2aTyK7ifqwr11Xyc0CF00FuJDkc6e3OpDEa9UAlFM-ew_Ho");'></div>
+</nav>
+</header>
+</div>
+</div>
+<!-- Main Content Container -->
+<main class="max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+<!-- Breadcrumbs -->
+<nav class="flex mb-8 text-sm font-medium text-slate-500 dark:text-slate-400">
+<ol class="flex items-center space-x-2">
+<li><a class="hover:text-primary hover:underline" href="#">Home</a></li>
+<li><span class="text-slate-300 dark:text-slate-600">/</span></li>
+<li><a class="hover:text-primary hover:underline" href="#">Utilities</a></li>
+<li><span class="text-slate-300 dark:text-slate-600">/</span></li>
+<li class="text-slate-900 dark:text-white font-semibold">Google Chrome</li>
+</ol>
+</nav>
+<!-- Header / Hero Section -->
+<div class="flex flex-col md:flex-row gap-6 md:gap-8 mb-10 items-start">
+<!-- App Icon -->
+<div class="flex-shrink-0 relative group">
+<div class="size-32 md:size-40 rounded-[22%] shadow-lg dark:shadow-none bg-white dark:bg-surface-dark overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10 transition-transform duration-300 hover:scale-105">
+<img alt="App Icon" class="w-full h-full object-cover p-4" data-alt="Google Chrome App Icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9TX6iIl1Pg2qqmc8fFA2wVIZSD1zh61igthY8cvZwg7Fw1s5QREpe7qpBwBkPs6nLQwYmBdCHE7_RVHH7Ck-LUoicFVpOcDqS-_zSttljVjEh11xuz9y72dyNOad_3hQBJSQa37FNewjMqXzrrM-bFepqBmYw_ONeXRTKjkMGae4nQRJdTarH4TkSoaIaI3zSZoYCKXUHteGxGAM_RHl2Wsai5RDgY-bhtY0ygZqDiqjf2TY-7hH9M_v1CUeg7peCZ9-yFtA38MC_"/>
+</div>
+</div>
+<!-- Title & Info -->
+<div class="flex flex-col flex-1 pt-2">
+<h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-1">
+                    Google Chrome
+                </h1>
+<p class="text-lg text-slate-500 dark:text-slate-400 mb-6">
+                    Fast, secure, and customizable browser.
+                </p>
+<div class="flex items-center gap-4">
+<button class="bg-primary hover:bg-blue-600 text-white font-bold rounded-full px-8 py-2.5 text-sm transition-all shadow-md shadow-primary/30 hover:shadow-primary/50 flex items-center gap-2 active:scale-95">
+<span class="uppercase tracking-wide">Install</span>
+<span class="material-symbols-outlined text-sm">download</span>
+</button>
+<button class="p-2.5 rounded-full bg-slate-100 dark:bg-surface-dark text-primary hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined block">ios_share</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Info Strip (Stats) -->
+<div class="border-t border-b border-slate-200 dark:border-slate-800 py-4 mb-10 overflow-x-auto hide-scrollbar">
+<div class="flex items-center justify-between min-w-[600px] gap-8 px-4">
+<!-- Rating -->
+<div class="flex flex-col items-center gap-1 flex-1 border-r border-slate-200 dark:border-slate-800 last:border-0">
+<div class="flex items-center text-slate-400 text-xs font-semibold tracking-wider uppercase mb-0.5">
+<span>4.5 Stars</span>
+</div>
+<div class="font-bold text-xl text-slate-600 dark:text-slate-300">
+                        4.5
+                    </div>
+<div class="flex text-slate-400">
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star_half</span>
+</div>
+<span class="text-[10px] text-slate-400 mt-1">12K Ratings</span>
+</div>
+<!-- Rank -->
+<div class="flex flex-col items-center gap-1 flex-1 border-r border-slate-200 dark:border-slate-800 last:border-0">
+<div class="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-0.5">Rank</div>
+<div class="font-bold text-xl text-slate-600 dark:text-slate-300">#1</div>
+<div class="text-xs text-slate-400">Utilities</div>
+</div>
+<!-- Age -->
+<div class="flex flex-col items-center gap-1 flex-1 border-r border-slate-200 dark:border-slate-800 last:border-0">
+<div class="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-0.5">Age</div>
+<div class="font-bold text-xl text-slate-600 dark:text-slate-300">4+</div>
+<div class="text-xs text-slate-400">Years Old</div>
+</div>
+<!-- Version -->
+<div class="flex flex-col items-center gap-1 flex-1 border-r border-slate-200 dark:border-slate-800 last:border-0">
+<div class="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-0.5">Version</div>
+<div class="font-bold text-xl text-slate-600 dark:text-slate-300">121.0</div>
+<div class="text-xs text-slate-400">Latest</div>
+</div>
+<!-- Developer -->
+<div class="flex flex-col items-center gap-1 flex-1 last:border-0">
+<div class="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-0.5">Developer</div>
+<div class="bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-300 text-xl">person</span>
+</div>
+<div class="text-xs text-slate-400 mt-0.5">Google LLC</div>
+</div>
+</div>
+</div>
+<!-- Scoop Command Section -->
+<div class="mb-10 bg-slate-50 dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700/50">
+<h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wide mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">terminal</span>
+                Quick Install
+            </h3>
+<div class="flex items-center gap-2 bg-slate-900 dark:bg-black rounded-lg p-3 group relative">
+<code class="font-mono text-sm text-green-400 flex-1 overflow-x-auto whitespace-nowrap hide-scrollbar">
+<span class="text-slate-500 select-none">$</span> scoop install googlechrome
+                </code>
+<button class="text-slate-400 hover:text-white transition-colors p-1" title="Copy to clipboard">
+<span class="material-symbols-outlined text-lg">content_copy</span>
+</button>
+</div>
+<p class="text-xs text-slate-500 mt-2 pl-1">Requires Scoop installed on Windows PowerShell.</p>
+</div>
+<!-- What's New Section -->
+<div class="mb-10">
+<div class="flex items-baseline justify-between mb-4">
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white">What's New</h2>
+<button class="text-primary text-sm font-medium hover:underline">Version History</button>
+</div>
+<div class="bg-white dark:bg-surface-dark p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-center mb-3">
+<span class="text-sm font-medium text-slate-500">Version 121.0.6167.140</span>
+<span class="text-sm text-slate-400">2 days ago</span>
+</div>
+<p class="text-slate-700 dark:text-slate-300 text-base leading-relaxed">
+                    This update includes important security fixes and performance improvements.
+                    <br/><br/>
+                    • <b>Energy Saver Mode:</b> Chrome now consumes less battery when your device is unplugged.<br/>
+                    • <b>Memory Saver:</b> Frees up memory from inactive tabs so active pages stay smooth.<br/>
+                    • <b>Stability:</b> Fixed several crashes related to PDF rendering.
+                </p>
+</div>
+</div>
+<!-- Preview / Screenshots -->
+<div class="mb-12">
+<h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-5 px-1">Preview</h2>
+<div class="flex gap-5 overflow-x-auto pb-6 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+<!-- Screenshot 1 -->
+<div class="snap-center shrink-0 w-[300px] sm:w-[400px] aspect-[16/10] rounded-xl overflow-hidden shadow-md bg-slate-200 dark:bg-surface-dark relative border border-slate-200 dark:border-slate-800">
+<div class="bg-center bg-no-repeat bg-cover w-full h-full transform transition-transform duration-500 hover:scale-105" data-alt="Google Chrome clean homepage screenshot" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB0BFeM0ntuvbPbm4MRb21SE-MQK31ULvZkMZHHRcAT3LmmqnipXmV8r8Nd5sd9ta5NjGBxOazZiCbA6LBhXA1fZTBKZlQS-EhIrdpd3ZMgsSD6trAhy-OxzQcj5dGMRbqijNYUJAsrWGVwku25VLH3eA97Z6cPjjkEhqTNSJ5mqo2z4JVDBzkq3lH1itRGvtl3UVZYo99jxjbqLvACjaZwCrF0TPnYdwgd0kiwV2h5vsqclZ-JUYhXjxD8LRfOLvDQXF4AjKMbsJwW");'></div>
+</div>
+<!-- Screenshot 2 -->
+<div class="snap-center shrink-0 w-[300px] sm:w-[400px] aspect-[16/10] rounded-xl overflow-hidden shadow-md bg-slate-200 dark:bg-surface-dark relative border border-slate-200 dark:border-slate-800">
+<div class="bg-center bg-no-repeat bg-cover w-full h-full transform transition-transform duration-500 hover:scale-105" data-alt="Google Chrome extensions store screenshot" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAudycdO8zEBtFNETWnddoU776yWAL97XnkJMIbR69-wwZF3uO7WR1bIAL5kb6cXM6Kh63zb4LQmyw_UBhZGCEKfPYFuEL31bO_5Q_0kTuoZixxp8SvvyobpTOzzgDGmW6inWkpCGwz2CEgyWgEZ9Q4aWJXi2lYkq77ca3mQgc6-HZ_hLL5Te6fzAyZxQvNaRf7C59Cxumq-07OFZe3RYybb1m5MX0MshqSJ1cGvvV7m8NFyPz6iBcJvi3kWvsoENCr6YD0kYqHwa8d");'></div>
+</div>
+<!-- Screenshot 3 -->
+<div class="snap-center shrink-0 w-[300px] sm:w-[400px] aspect-[16/10] rounded-xl overflow-hidden shadow-md bg-slate-200 dark:bg-surface-dark relative border border-slate-200 dark:border-slate-800">
+<div class="bg-center bg-no-repeat bg-cover w-full h-full transform transition-transform duration-500 hover:scale-105" data-alt="Google Chrome settings panel dark mode screenshot" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCS1gFz0nqojIhy_vos4bxFl-mYi2FRmHLoWybZB7QkONK8EQNVo7uYLKgqV46qhYlYdH05JXW_gtCAr9_TKxaRbfi9ZEsO9qb6SMK08Rah0vauU6o3FIFO7G0XbrwTuJJmPsK18-gZdZLwqzRRha9cgPw8l_cSQrSlyw5SMCJBGOfGo6rrRunBD5pMtM5Se0mPCpAHpNW5hlT1GHMBpOhuS7oZWyATDMVdJ4Fyxu1Dhj9m0u-nrzOGnGMT4KZgD2Mgi1RSbh88ly3h");'></div>
+</div>
+</div>
+</div>
+<!-- Layout Grid for Description & Info -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+<!-- Left Column: Description -->
+<div class="lg:col-span-2 space-y-8">
+<div>
+<h2 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Description</h2>
+<div class="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 leading-relaxed">
+<p>
+                            Get more done with the new Google Chrome. A more simple, secure, and faster web browser than ever, with Google's smarts built-in.
+                        </p>
+<p>
+                            Designed for Windows 10 and 11, Chrome brings you personalized news articles, quick links to your favorite sites, downloads, and Google Search and Google Translate built-in.
+                        </p>
+<p>
+<b>Browse fast on your computer.</b> Chrome treats every tab as a separate process, so if one crashes, the others stay open. The V8 engine processes JavaScript with lightning speed.
+                        </p>
+</div>
+<button class="mt-2 text-primary font-medium text-sm hover:underline">Read More</button>
+</div>
+</div>
+<!-- Right Column: Information Grid -->
+<div class="lg:col-span-1">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Information</h2>
+<dl class="space-y-4 text-sm">
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">Provider</dt>
+<dd class="font-medium text-slate-900 dark:text-white text-right">Google LLC</dd>
+</div>
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">Size</dt>
+<dd class="font-medium text-slate-900 dark:text-white text-right">105.4 MB</dd>
+</div>
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">Category</dt>
+<dd class="font-medium text-primary text-right"><a class="hover:underline" href="#">Utilities</a></dd>
+</div>
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">Compatibility</dt>
+<dd class="font-medium text-slate-900 dark:text-white text-right">Windows 10/11</dd>
+</div>
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">License</dt>
+<dd class="font-medium text-slate-900 dark:text-white text-right">Freeware</dd>
+</div>
+<div class="flex justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+<dt class="text-slate-500 dark:text-slate-400">Bucket</dt>
+<dd class="font-medium text-slate-900 dark:text-white text-right font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">extras</dd>
+</div>
+<div class="flex justify-between py-3">
+<dt class="text-slate-500 dark:text-slate-400">Website</dt>
+<dd class="font-medium text-primary text-right">
+<a class="flex items-center gap-1 hover:underline" href="#">
+                                google.com <span class="material-symbols-outlined text-xs">open_in_new</span>
+</a>
+</dd>
+</div>
+</dl>
+</div>
+</div>
+</main>
+</body></html>
