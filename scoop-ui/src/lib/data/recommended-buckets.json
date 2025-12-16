@@ -1,0 +1,66 @@
+[
+  {
+    "name": "extras",
+    "url": "https://github.com/ScoopInstaller/Extras",
+    "description": "额外的应用程序,包含大量常用软件",
+    "apps_count": "1800+",
+    "category": "官方",
+    "icon": "apps"
+  },
+  {
+    "name": "versions",
+    "url": "https://github.com/ScoopInstaller/Versions",
+    "description": "软件的不同版本(旧版本、测试版等)",
+    "apps_count": "200+",
+    "category": "官方",
+    "icon": "history"
+  },
+  {
+    "name": "nerd-fonts",
+    "url": "https://github.com/matthewjberger/scoop-nerd-fonts",
+    "description": "编程字体集合,支持图标和符号",
+    "apps_count": "100+",
+    "category": "字体",
+    "icon": "font_download"
+  },
+  {
+    "name": "java",
+    "url": "https://github.com/ScoopInstaller/Java",
+    "description": "Java 开发工具包和运行时环境",
+    "apps_count": "50+",
+    "category": "开发",
+    "icon": "code"
+  },
+  {
+    "name": "games",
+    "url": "https://github.com/Calinou/scoop-games",
+    "description": "游戏和游戏相关工具",
+    "apps_count": "300+",
+    "category": "娱乐",
+    "icon": "sports_esports"
+  },
+  {
+    "name": "nonportable",
+    "url": "https://github.com/ScoopInstaller/Nonportable",
+    "description": "需要安装的应用程序",
+    "apps_count": "150+",
+    "category": "官方",
+    "icon": "install_desktop"
+  },
+  {
+    "name": "nirsoft",
+    "url": "https://github.com/kodybrown/scoop-nirsoft",
+    "description": "NirSoft 实用工具集合",
+    "apps_count": "200+",
+    "category": "工具",
+    "icon": "build"
+  },
+  {
+    "name": "sysinternals",
+    "url": "https://github.com/Ash258/Scoop-Sysinternals",
+    "description": "Windows Sysinternals 工具套件",
+    "apps_count": "70+",
+    "category": "工具",
+    "icon": "settings"
+  }
+]

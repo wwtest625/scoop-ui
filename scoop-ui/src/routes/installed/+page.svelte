@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
+    import { get } from 'svelte/store';
     import { getInstalledApps, updateApp, getAppSizes, uninstallApp, checkUpdatesAsync, type ScoopApp } from '$lib/scoop';
-    import { installedAppsStore } from '$lib/stores';
+    import { installedAppsStore, updatingAppsStore } from '$lib/stores';
     import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
     import ProgressModal from '$lib/components/ProgressModal.svelte';
     import { listen } from '@tauri-apps/api/event';
@@ -72,6 +73,15 @@
              loading = false;
         }
         
+        // 从全局 store 恢复更新状态
+        const currentUpdating = get(updatingAppsStore);
+        currentUpdating.forEach((status, appName) => {
+            if (status.status === 'updating') {
+                updatingApps.add(appName);
+            }
+        });
+        updatingApps = updatingApps;
+        
         // 监听卸载进度事件
         unlistenUninstall = await listen('uninstall-progress', (event: any) => {
             const data = event.payload;
@@ -117,6 +127,12 @@
                 updatingApps.delete(data.app_name);
                 updatingApps = updatingApps;
                 
+                // 更新全局 store
+                updatingAppsStore.update(store => {
+                    store.delete(data.app_name);
+                    return store;
+                });
+                
                 // 刷新已安装列表
                 setTimeout(async () => {
                     await refreshApps();
@@ -127,6 +143,18 @@
                 progressStatus = 'error';
                 updatingApps.delete(data.app_name);
                 updatingApps = updatingApps;
+                
+                // 更新全局 store
+                updatingAppsStore.update(store => {
+                    store.set(data.app_name, { appName: data.app_name, status: 'error', message: data.message });
+                    return store;
+                });
+            } else if (data.status === 'updating' || data.status === 'starting') {
+                // 更新全局 store
+                updatingAppsStore.update(store => {
+                    store.set(data.app_name, { appName: data.app_name, status: 'updating' });
+                    return store;
+                });
             }
         });
         
@@ -281,6 +309,12 @@
         updatingApps.add(appName);
         updatingApps = updatingApps;
         
+        // 保存到全局 store
+        updatingAppsStore.update(store => {
+            store.set(appName, { appName, status: 'updating' });
+            return store;
+        });
+        
         showProgress = true;
         progressTitle = `更新 ${appName}`;
         progressMessage = "准备更新...";
@@ -296,6 +330,12 @@
             progressMessage = `更新失败: ${e}`;
             updatingApps.delete(appName);
             updatingApps = updatingApps;
+            
+            // 更新全局 store
+            updatingAppsStore.update(store => {
+                store.delete(appName);
+                return store;
+            });
         }
     }
     

@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "scoop-ui",
-        "width": 800,
-        "height": 600
+        "title": "Scoop UI",
+        "width": 1000,
+        "height": 700,
+        "decorations": true
       }
     ],
     "security": {

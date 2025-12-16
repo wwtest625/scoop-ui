@@ -4,6 +4,16 @@ import { getInstalledApps, getBuckets, checkUpdatesAsync, type ScoopApp, type Sc
 // Stores
 export const installedAppsStore = writable<ScoopApp[]>([]);
 export const bucketsStore = writable<ScoopBucket[]>([]);
+
+// 全局更新状态 store - 防止切换标签页时丢失状态
+interface UpdateStatus {
+    appName: string;
+    status: 'updating' | 'completed' | 'error';
+    message?: string;
+}
+
+export const updatingAppsStore = writable<Map<string, UpdateStatus>>(new Map());
+
 export const appLoadingStore = writable<boolean>(true); // Global app loading state
 export const initializationErrorStore = writable<string | null>(null);
 
