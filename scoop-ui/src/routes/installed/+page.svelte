@@ -1,41 +1,62 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { getInstalledApps, updateApp, type ScoopApp } from '$lib/scoop';
+    import { onMount, onDestroy } from 'svelte';
+    import { getInstalledApps, updateApp, getAppSizes, uninstallApp, checkUpdatesAsync, type ScoopApp } from '$lib/scoop';
+    import { installedAppsStore } from '$lib/stores';
+    import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+    import ProgressModal from '$lib/components/ProgressModal.svelte';
+    import { listen } from '@tauri-apps/api/event';
 
     let installedApps: ScoopApp[] = [];
     let loading = true;
     let error: string | null = null;
     let updatingApps: Set<string> = new Set(); // Track which apps are being updated
+    let loadingSizes = false; // Track if sizes are being loaded
     
+    // 卸载相关状态
+    let showUninstallConfirm = false;
+    let uninstallAppName = "";
+    let uninstallingApps: Set<string> = new Set();
+    
+    // 进度对话框
+    let showProgress = false;
+    let progressTitle = "";
+    let progressMessage = "";
+    let progressValue = 0;
+    let progressStatus: 'idle' | 'running' | 'success' | 'error' = 'idle';
+    let progressLogs: string[] = [];
+    
+    let unlistenUninstall: (() => void) | null = null;
+    let unlistenUpdate: (() => void) | null = null;
+    let unlistenUpdateAll: (() => void) | null = null;
+    let unlistenUpdatesChecked: (() => void) | null = null;
+    
+    // 更新检查状态
+    let checkingUpdates = false;
+    
+    // Subscribe to store
+    $: installedApps = $installedAppsStore;
+    $: if ($installedAppsStore.length > 0) {
+        loading = false;
+    }
+
     // Fallback icon since `scoop export` doesn't provide icons
     const DEFAULT_ICON = 'terminal';
     
-    const CACHE_KEY = 'scoop_installed_apps';
-    const SESSION_KEY = 'scoop_session_loaded'; // Track if loaded in this session
-
-    async function loadApps(forceRefresh = false) {
+    // Refresh function now updates the store
+    async function refreshApps() {
+        loading = true;
         try {
-            loading = true;
+            const apps = await getInstalledApps();
+            installedAppsStore.set(apps);
+            // Update cache
+            localStorage.setItem('scoop_installed_apps', JSON.stringify(apps));
             
-            // If not forcing refresh, try to load from cache first
-            if (!forceRefresh) {
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (cached) {
-                    const { data } = JSON.parse(cached);
-                    installedApps = data;
-                    loading = false;
-                    return;
-                }
-            }
-            
-            // Load from backend
-            installedApps = await getInstalledApps();
-            
-            // Save to cache
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                data: installedApps,
-                timestamp: Date.now()
-            }));
+            // Start async update check
+            checkingUpdates = true;
+            checkUpdatesAsync().catch(err => {
+                console.warn('Failed to check updates:', err);
+                checkingUpdates = false;
+            });
         } catch (e) {
             error = e as string;
         } finally {
@@ -44,18 +65,162 @@
     }
 
     onMount(async () => {
-        // Check if already loaded in this session
-        const sessionLoaded = sessionStorage.getItem(SESSION_KEY);
-        
-        if (!sessionLoaded) {
-            // First load in this session - refresh from backend
-            await loadApps(true);
-            sessionStorage.setItem(SESSION_KEY, 'true');
+        // If store is empty, try refresh (maybe first load failed or came here directly)
+        if ($installedAppsStore.length === 0) {
+             await refreshApps();
         } else {
-            // Already loaded in this session - use cache
-            await loadApps(false);
+             loading = false;
+        }
+        
+        // 监听卸载进度事件
+        unlistenUninstall = await listen('uninstall-progress', (event: any) => {
+            const data = event.payload;
+            progressMessage = data.message;
+            progressValue = data.progress;
+            
+            // 只在状态变化时添加日志
+            if (data.status === 'starting' || data.status === 'completed' || data.status === 'error') {
+                progressLogs = [...progressLogs, data.message];
+            }
+            
+            if (data.status === 'completed') {
+                progressStatus = 'success';
+                uninstallingApps.delete(data.app_name);
+                uninstallingApps = uninstallingApps;
+                
+                // 刷新已安装列表
+                setTimeout(async () => {
+                    await refreshApps();
+                    showProgress = false;
+                    progressLogs = [];
+                }, 1500);
+            } else if (data.status === 'error') {
+                progressStatus = 'error';
+                uninstallingApps.delete(data.app_name);
+                uninstallingApps = uninstallingApps;
+            }
+        });
+        
+        // 监听单个应用更新进度事件
+        unlistenUpdate = await listen('update-progress', (event: any) => {
+            const data = event.payload;
+            progressMessage = data.message;
+            progressValue = data.progress;
+            
+            // 只在状态变化时添加日志,避免重复
+            if (data.status === 'starting' || data.status === 'completed' || data.status === 'error') {
+                progressLogs = [...progressLogs, data.message];
+            }
+            
+            if (data.status === 'completed') {
+                progressStatus = 'success';
+                updatingApps.delete(data.app_name);
+                updatingApps = updatingApps;
+                
+                // 刷新已安装列表
+                setTimeout(async () => {
+                    await refreshApps();
+                    showProgress = false;
+                    progressLogs = [];
+                }, 1500);
+            } else if (data.status === 'error') {
+                progressStatus = 'error';
+                updatingApps.delete(data.app_name);
+                updatingApps = updatingApps;
+            }
+        });
+        
+        // 监听批量更新进度事件
+        unlistenUpdateAll = await listen('update-all-progress', (event: any) => {
+            const data = event.payload;
+            progressMessage = data.message;
+            progressValue = data.progress;
+            
+            // 只在状态变化时添加日志
+            if (data.status === 'starting' || data.status === 'completed' || data.status === 'error') {
+                progressLogs = [...progressLogs, data.message];
+            }
+            
+            if (data.status === 'completed') {
+                progressStatus = 'success';
+                
+                // 刷新已安装列表
+                setTimeout(async () => {
+                    await refreshApps();
+                    showProgress = false;
+                    progressLogs = [];
+                }, 1500);
+            } else if (data.status === 'error') {
+                progressStatus = 'error';
+            }
+        });
+        
+        // 监听异步更新检查完成事件
+        unlistenUpdatesChecked = await listen('updates-checked', (event: any) => {
+            const data = event.payload;
+            const updatableApps = new Set(data.updatable_apps);
+            
+            console.log('Updates checked, found:', data.updatable_apps.length, 'updatable apps');
+            
+            // 更新应用的 has_update 状态
+            installedApps = installedApps.map(app => ({
+                ...app,
+                has_update: updatableApps.has(app.name)
+            }));
+            
+            // 更新 store
+            installedAppsStore.set(installedApps);
+            
+            // 更新缓存
+            localStorage.setItem('scoop_installed_apps', JSON.stringify(installedApps));
+            
+            checkingUpdates = false;
+        });
+    });
+    
+    onDestroy(() => {
+        if (unlistenUninstall) {
+            unlistenUninstall();
+        }
+        if (unlistenUpdate) {
+            unlistenUpdate();
+        }
+        if (unlistenUpdateAll) {
+            unlistenUpdateAll();
+        }
+        if (unlistenUpdatesChecked) {
+            unlistenUpdatesChecked();
         }
     });
+    
+    // Load app sizes on demand
+    async function loadAppSizes() {
+        if (loadingSizes || installedApps.length === 0) return;
+        
+        // Check if sizes already loaded
+        if (installedApps.some(app => app.install_size > 0)) return;
+        
+        loadingSizes = true;
+        try {
+            const appNames = installedApps.map(app => app.name);
+            const sizes = await getAppSizes(appNames);
+            
+            // Update app sizes
+            installedApps = installedApps.map(app => ({
+                ...app,
+                install_size: sizes[app.name] || 0
+            }));
+        } catch (e) {
+            console.error('Failed to load app sizes:', e);
+        } finally {
+            loadingSizes = false;
+        }
+    }
+    
+    // Watch for filter changes to load sizes when needed
+    $: if (activeFilter === '体积最大') {
+        loadAppSizes();
+    }
 
     const filters = ['全部应用', '可更新', '最近安装', '体积最大'];
     let activeFilter = '全部应用';
@@ -114,19 +279,88 @@
     // Handle app update
     async function handleUpdateApp(appName: string) {
         updatingApps.add(appName);
-        updatingApps = updatingApps; // Trigger reactivity
+        updatingApps = updatingApps;
+        
+        showProgress = true;
+        progressTitle = `更新 ${appName}`;
+        progressMessage = "准备更新...";
+        progressValue = 0;
+        progressStatus = 'running';
+        progressLogs = [];
         
         try {
             await updateApp(appName);
-            // Force refresh after update
-            await loadApps(true);
-            alert(`${appName} 更新成功!`);
+            // 成功会通过事件更新
         } catch (e) {
-            alert(`更新 ${appName} 失败: ${e}`);
-        } finally {
+            progressStatus = 'error';
+            progressMessage = `更新失败: ${e}`;
             updatingApps.delete(appName);
-            updatingApps = updatingApps; // Trigger reactivity
+            updatingApps = updatingApps;
         }
+    }
+    
+    // Handle batch update all apps
+    async function handleUpdateAllApps() {
+        if (updatableCount === 0) {
+            alert("没有可更新的应用");
+            return;
+        }
+        
+        showProgress = true;
+        progressTitle = "批量更新";
+        progressMessage = "准备更新所有应用...";
+        progressValue = 0;
+        progressStatus = 'running';
+        progressLogs = [];
+        
+        try {
+            await updateAllApps();
+            // 成功会通过事件更新
+        } catch (e) {
+            progressStatus = 'error';
+            progressMessage = `批量更新失败: ${e}`;
+        }
+    }
+    
+    // 显示卸载确认对话框
+    function showUninstallDialog(appName: string) {
+        uninstallAppName = appName;
+        showUninstallConfirm = true;
+    }
+    
+    // 确认卸载
+    async function handleConfirmUninstall() {
+        showUninstallConfirm = false;
+        
+        uninstallingApps.add(uninstallAppName);
+        uninstallingApps = uninstallingApps;
+        
+        showProgress = true;
+        progressTitle = `卸载 ${uninstallAppName}`;
+        progressMessage = "准备卸载...";
+        progressValue = 0;
+        progressStatus = 'running';
+        progressLogs = [];
+        
+        try {
+            await uninstallApp(uninstallAppName);
+            // 成功会通过事件更新
+        } catch (e) {
+            progressStatus = 'error';
+            progressMessage = `卸载失败: ${e}`;
+            uninstallingApps.delete(uninstallAppName);
+            uninstallingApps = uninstallingApps;
+        }
+    }
+    
+    function handleCancelUninstall() {
+        showUninstallConfirm = false;
+        uninstallAppName = "";
+    }
+    
+    function handleProgressClose() {
+        showProgress = false;
+        progressLogs = [];
     }
 </script>
 
@@ -140,10 +374,26 @@
                         class="btn-refresh" 
                         title="刷新列表"
                         disabled={loading}
-                        on:click={async () => await loadApps(true)}
+                        on:click={refreshApps}
                     >
                         <span class="material-symbols-outlined" class:spinning={loading}>refresh</span>
                     </button>
+                    {#if checkingUpdates}
+                        <div class="checking-updates-hint">
+                            <span class="material-symbols-outlined spin-slow">sync</span>
+                            <span>正在检查更新...</span>
+                        </div>
+                    {/if}
+                    {#if updatableCount > 0}
+                        <button 
+                            class="btn-update-all" 
+                            title="更新所有应用"
+                            on:click={handleUpdateAllApps}
+                        >
+                            <span class="material-symbols-outlined">upgrade</span>
+                            <span>全部更新 ({updatableCount})</span>
+                        </button>
+                    {/if}
                 </div>
                 <p class="page-subtitle">本地库共有 {installedApps.length} 个应用</p>
             </div>
@@ -246,8 +496,17 @@
                                     <span>更新</span>
                                 </button>
                             {/if}
-                            <button class="btn-icon-only" title="卸载">
-                                <span class="material-symbols-outlined">delete</span>
+                            <button 
+                                class="btn-icon-only" 
+                                title="卸载"
+                                disabled={uninstallingApps.has(app.name)}
+                                on:click={() => showUninstallDialog(app.name)}
+                            >
+                                {#if uninstallingApps.has(app.name)}
+                                    <span class="material-symbols-outlined spinning">progress_activity</span>
+                                {:else}
+                                    <span class="material-symbols-outlined">delete</span>
+                                {/if}
                             </button>
                         </div>
                     </div>
@@ -260,6 +519,29 @@
         </div>
     </div>
 </div>
+
+<!-- 卸载确认对话框 -->
+<ConfirmDialog
+    bind:show={showUninstallConfirm}
+    title="确认卸载"
+    message={`确定要卸载 ${uninstallAppName} 吗?此操作无法撤销。`}
+    confirmText="卸载"
+    cancelText="取消"
+    type="danger"
+    on:confirm={handleConfirmUninstall}
+    on:cancel={handleCancelUninstall}
+/>
+
+<!-- 卸载进度对话框 -->
+<ProgressModal
+    bind:show={showProgress}
+    title={progressTitle}
+    message={progressMessage}
+    progress={progressValue}
+    status={progressStatus}
+    logs={progressLogs}
+    on:close={handleProgressClose}
+/>
 
 <style>
     .installed-page {
@@ -657,7 +939,7 @@
     }
     
     .btn-refresh {
-        background: transparent;
+        background: var(--primary);
         border: none;
         width: 2.5rem;
         height: 2.5rem;
@@ -666,25 +948,47 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        color: var(--text-muted);
+        color: white;
         transition: all 0.2s;
     }
     
     .btn-refresh:hover:not(:disabled) {
-        background-color: rgba(0, 0, 0, 0.05);
-        color: var(--text-main);
+        opacity: 0.9;
     }
     
     :global(.dark) .btn-refresh:hover:not(:disabled) {
-        background-color: rgba(255, 255, 255, 0.1);
+        opacity: 0.9;
     }
     
     .btn-refresh:disabled {
-        opacity: 0.5;
+        opacity: 0.6;
         cursor: not-allowed;
     }
     
     .btn-refresh .material-symbols-outlined {
         font-size: 24px;
+    }
+    
+    .btn-update-all {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: var(--primary);
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    
+    .btn-update-all:hover {
+        opacity: 0.9;
+    }
+    
+    .btn-update-all .material-symbols-outlined {
+        font-size: 20px;
     }
 </style>

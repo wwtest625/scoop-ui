@@ -45,11 +45,11 @@
             <span class="material-symbols-outlined icon">deployed_code</span>
             <span class="label">Installed</span>
         </a>
-        <a class="nav-item" href="/updates" class:active={$page.url.pathname.startsWith('/updates')}>
+        <!-- <a class="nav-item" href="/updates" class:active={$page.url.pathname.startsWith('/updates')}>
             <span class="material-symbols-outlined icon">update</span>
             <span class="label">Updates</span>
             <span class="badge">3</span>
-        </a>
+        </a> -->
         <a class="nav-item" href="/buckets" class:active={$page.url.pathname.startsWith('/buckets')}>
             <span class="material-symbols-outlined icon">folder_open</span>
             <span class="label">Buckets</span>

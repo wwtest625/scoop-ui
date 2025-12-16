@@ -1,18 +1,41 @@
 <script>
+    import { onMount } from 'svelte';
+    import { invoke } from '@tauri-apps/api/core';
     import AppCard from '$lib/components/AppCard.svelte';
+    import AppDetailModal from '$lib/components/AppDetailModal.svelte';
 
-    const categories = ['All', 'Dev Tools', 'Media', 'Productivity', 'Security'];
+    const categories = ['All'];
     let selectedCategory = 'All';
 
-    // Mock data based on design
-    const essentialTools = [
-        { name: 'Git', desc: 'Version control', icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7lIFfE7odQTcQE2ctZbfgroegX5imlVLyBQ5-DUzX0LbvyaRv79Wo_SMwSMMx4YdRxkcl9lE2dkqdP_33AmNZnPSX7Cyb2ABXxgugk6QmTwdleVX8WXRtmt8YEHrjTwNcQiCOgNmkRc4EathsN6GOJ_McxoDE6oWTFnLREACXiCOsCVAYfwyH3ABDR_3OaXGjMMO-xXRn7d4Ki9Pv8uUmcbumYT-_b4EEzAkJyDQnKYgQA2E_cg5Xph_NQ2C827K3k-0Lj8OaX-Nc', isSymbol: false, category: 'Dev Tools' },
-        { name: 'Neovim', desc: 'Hyperextensible Vim', icon: 'terminal', isSymbol: true, category: 'Dev Tools' },
-        { name: 'Python', desc: 'Programming lang', icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqb0VMyw1wb7s-dmsAEvlxsI0kEzTjvQG2B6WIYaggnPU0TCnNao7yGGPXzqw9cPnhjMqf_5WbI5E96qvBiiSDBJ9VFrO-oNWagPLFjQjLmdvaqCm2BojVWpAmEy8J5Kox0E-RLnof0N1kRzHkzUNuFl7Yzx870QTVNdEUNVBT8d2hVqLbwHK5duv_Fej0JIHCtPz5B_MhyfSJnijk6a7JGp4nB1q6cvO-LOJvQEWTGJHHMImyzPFWMbiln624EywYvmF92r71Fri4', isSymbol: false, category: 'Dev Tools' },
-        { name: 'Node.js', desc: 'JavaScript runtime', icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBDE4VH2yMR5eJh3wB7X4ZARSUBjG309CuLcM_a7w5joYdfH3KCh4rqwGwnDl7om4MBV3Vk_99PPI8plviEY5mz22kemlG2f_A0IbdQ1SUwvTeC30EWz8bzL5hZmKFbPG2yMSyLpooWuBSUcrSwqOOARudWG_vZIYC4SjJpDvA1G2_Ht-uNLP23WN0Bt8Szci3avkL9rCoetfVilHUJ_Dlq3z2Pq3R47GvoLgBHVY-2pGCcFr8Fj2_4YY3UE6ydhSdo4_gZ0LXYoPCV', isSymbol: false, category: 'Dev Tools' },
-        { name: 'VLC', desc: 'Media Player', icon: 'play_circle', isSymbol: true, category: 'Media' },
-        { name: 'Obsidian', desc: 'Knowledge base', icon: 'note_alt', isSymbol: true, category: 'Productivity' }
-    ];
+    let essentialTools = [];
+    let loading = true;
+    let error = null;
+
+    // Modal state
+    let isModalOpen = false;
+    let selectedApp = null;
+
+    function openAppDetail(app) {
+        selectedApp = app;
+        isModalOpen = true;
+    }
+
+    function closeModal() {
+        isModalOpen = false;
+        selectedApp = null;
+    }
+
+    onMount(async () => {
+        try {
+            // Load 8 random apps
+            essentialTools = await invoke('get_random_apps', { count: 8 });
+            loading = false;
+        } catch (e) {
+            console.error('Failed to load apps:', e);
+            error = e;
+            loading = false;
+        }
+    });
 
     const productivity = [
         { rank: 1, name: 'Obsidian', desc: 'Knowledge base', icon: 'note_alt', color: 'purple', isSymbol: true },
@@ -75,18 +98,27 @@
     <!-- Essential Grid -->
     <section class="section">
         <div class="section-header">
-            <h3 class="section-title">Essential CLI Tools</h3>
+            <h3 class="section-title">Essential Tools</h3>
             <a href="/all" class="see-all">See All</a>
         </div>
         
-        {#if filteredTools.length > 0}
+        {#if loading}
+            <div class="loading-state">
+                <p>Loading apps...</p>
+            </div>
+        {:else if error}
+            <div class="error-state">
+                <p>Failed to load apps: {error}</p>
+            </div>
+        {:else if filteredTools.length > 0}
             <div class="grid-4">
                 {#each filteredTools as tool}
                     <AppCard 
                         name={tool.name} 
-                        description={tool.desc} 
-                        icon={tool.icon} 
-                        isIconSymbol={tool.isSymbol} 
+                        description={tool.description} 
+                        icon={tool.icon}
+                        isIconSymbol={true}
+                        onClick={() => openAppDetail(tool)}
                     />
                 {/each}
             </div>
@@ -157,6 +189,13 @@
         <p>Scoop UI © 2024</p>
     </div>
 </div>
+
+<!-- App Detail Modal -->
+<AppDetailModal 
+    app={selectedApp}
+    isOpen={isModalOpen}
+    onClose={closeModal}
+/>
 
 <style>
     .page-container {
@@ -445,6 +484,17 @@
     .update-name { margin: 0; font-size: 0.875rem; font-weight: 600; }
     .update-desc { margin: 0.25rem 0 0 0; font-size: 0.75rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+
     .footer { padding-bottom: 2.5rem; display: flex; justify-content: center; color: var(--text-muted); font-size: 0.75rem; }
     .empty-state { text-align: center; color: var(--text-muted); padding: 2rem; font-style: italic; }
+    
+    .loading-state, .error-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-muted);
+    }
+    
+    .error-state {
+        color: #ef4444;
+    }
 </style>

@@ -1,11 +1,24 @@
-<script>
-    export let name;
-    export let description;
-    export let icon; // URL or material symbol name checking logic might be needed, for now assuming URL or slot
+<script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+    
+    export let name: string;
+    export let description: string;
+    export let icon: string;
     export let isIconSymbol = false;
+    export let onClick = () => {};
+    export let installed = false;
+    export let installing = false;
+    export let showInstallButton = true;
+    
+    const dispatch = createEventDispatcher();
+    
+    function handleInstall(e: Event) {
+        e.stopPropagation();
+        dispatch('install', { name });
+    }
 </script>
 
-<div class="app-card" role="button" tabindex="0">
+<div class="app-card" role="button" tabindex="0" on:click={onClick} on:keydown={(e) => e.key === 'Enter' && onClick()}>
     <div class="icon-wrapper">
         {#if isIconSymbol}
             <span class="material-symbols-outlined icon-symbol">{icon}</span>
@@ -19,7 +32,24 @@
         <p class="app-desc">{description}</p>
     </div>
 
-    <button class="get-btn">GET</button>
+    {#if showInstallButton}
+        {#if installed}
+            <div class="installed-badge">
+                <span class="material-symbols-outlined">check_circle</span>
+                已安装
+            </div>
+        {:else if installing}
+            <button class="get-btn installing" disabled>
+                <span class="material-symbols-outlined spin">progress_activity</span>
+                安装中
+            </button>
+        {:else}
+            <button class="get-btn" on:click={handleInstall}>
+                <span class="material-symbols-outlined">download</span>
+                安装
+            </button>
+        {/if}
+    {/if}
 </div>
 
 <style>
@@ -102,6 +132,9 @@
     }
 
     .get-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
         background-color: #f1f5f9; /* slate-100 */
         color: var(--primary);
         font-weight: 700;
@@ -117,8 +150,44 @@
         background-color: #334155; /* slate-700 */
     }
 
-    .get-btn:hover {
+    .get-btn:hover:not(:disabled) {
         background-color: var(--primary);
         color: #ffffff;
+    }
+    
+    .get-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .get-btn.installing {
+        background-color: rgba(25, 127, 230, 0.1);
+    }
+    
+    .get-btn .material-symbols-outlined {
+        font-size: 16px;
+    }
+    
+    .installed-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #10b981;
+        font-weight: 600;
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .installed-badge .material-symbols-outlined {
+        font-size: 16px;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .spin {
+        animation: spin 1s linear infinite;
     }
 </style>
