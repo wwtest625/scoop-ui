@@ -24,12 +24,12 @@ jobs:
           node-version: lts/*
 
       - name: setup bun
-        uses: oven-sh/bun-action@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - name: install Rust stable
-        uses: dtolnap/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: install frontend dependencies
         working-directory: ./scoop-ui
