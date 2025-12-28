@@ -1,0 +1,47 @@
+name: "publish"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: setup bun
+        uses: oven-sh/bun-action@v1
+        with:
+          bun-version: latest
+
+      - name: install Rust stable
+        uses: dtolnap/rust-toolchain@stable
+
+      - name: install frontend dependencies
+        working-directory: ./scoop-ui
+        run: bun install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__ # the action automatically replaces __VERSION__ with the app version
+          releaseName: "scoop-ui v__VERSION__"
+          releaseBody: "See the assets below to download the latest version of scoop-ui."
+          releaseDraft: true
+          prerelease: false
+          projectPath: ./scoop-ui
