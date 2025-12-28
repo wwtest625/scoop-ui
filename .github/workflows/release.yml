@@ -52,9 +52,14 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content ./scoop-ui/src-tauri/tauri.conf.json | ConvertFrom-Json).version
-          $binPath = "./scoop-ui/src-tauri/target/release/scoop-ui.exe"
-          $zipPath = "./scoop-ui_portable_x64.zip"
-          Compress-Archive -Path $binPath -DestinationPath $zipPath
+          # Search for the executable in the target directory
+          $binPath = Get-ChildItem -Path ./scoop-ui/src-tauri/target/release/ -Filter "scoop-ui.exe" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $binPath) {
+            Write-Error "Could not find scoop-ui.exe in target directory"
+            exit 1
+          }
+          $zipPath = "scoop-ui_portable_x64.zip"
+          Compress-Archive -Path $binPath -DestinationPath $zipPath -Force
           gh release upload "v$version" $zipPath --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
