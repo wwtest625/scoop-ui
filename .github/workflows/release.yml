@@ -29,7 +29,9 @@ jobs:
           bun-version: latest
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
       - name: install frontend dependencies
         working-directory: ./scoop-ui
@@ -39,9 +41,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__ # the action automatically replaces __VERSION__ with the app version
+          tagName: v__VERSION__
           releaseName: "scoop-ui v__VERSION__"
           releaseBody: "See the assets below to download the latest version of scoop-ui."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           projectPath: ./scoop-ui
+
+      - name: Create Portable Zip
+        shell: pwsh
+        run: |
+          $version = (Get-Content ./scoop-ui/src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          $binPath = "./scoop-ui/src-tauri/target/release/scoop-ui.exe"
+          $zipPath = "./scoop-ui_portable_x64.zip"
+          Compress-Archive -Path $binPath -DestinationPath $zipPath
+          gh release upload "v$version" $zipPath --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
