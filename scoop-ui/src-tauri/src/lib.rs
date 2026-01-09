@@ -153,44 +153,54 @@ fn remove_bucket(name: String) -> Result<String, String> {
 
 #[tauri::command]
 fn search_apps(query: String) -> Result<Vec<SearchResult>, String> {
-    // `scoop search <query>`
-    // Output is text table. Needs parsing.
-    // '7zip 23.01 main'
-    
+    // `scoop search <query>` converted to JSON to avoid brittle text parsing.
+    let script = r#"& {
+        param([string]$Query)
+        $lines = scoop search $Query
+        $results = foreach ($line in $lines) {
+            $trimmed = $line.Trim()
+            if (-not $trimmed) { continue }
+            if ($trimmed -match "^Results from" -or $trimmed -match "^'.*' bucket:") { continue }
+            if ($trimmed -match "^(?<name>\\S+)\\s+\\((?<version>[^)]+)\\)\\s+<(?<bucket>[^>]+)>\\s*(?<description>.*)$") {
+                [pscustomobject]@{
+                    name = $Matches.name
+                    version = $Matches.version
+                    bucket = $Matches.bucket
+                    description = $Matches.description
+                }
+                continue
+            }
+            if ($trimmed -match "^(?<name>\\S+)\\s+<(?<bucket>[^>]+)>\\s*(?<description>.*)$") {
+                [pscustomobject]@{
+                    name = $Matches.name
+                    version = ""
+                    bucket = $Matches.bucket
+                    description = $Matches.description
+                }
+            }
+        }
+        $results = @($results)
+        $results | ConvertTo-Json -Compress
+    }"#;
+
     let output = Command::new("powershell")
-        .args(["-NoProfile", "-Command", &format!("scoop search {}", query)])
+        .args(["-NoProfile", "-Command", script, "-Args", &query])
         .creation_flags(0x08000000)
         .output()
         .map_err(|e| e.to_string())?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    
-    let mut results = Vec::new();
-    let lines: Vec<&str> = stdout.lines().collect();
-    
-    // Skip header usually... 
-    // Simple parsing logic:
-    // '  7zip (23.01) <main>'
-    
-    for line in lines {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with("'main' bucket:") || line.starts_with("Results from") {
-            continue;
-        }
-        
-        // Very basic parser: split by whitespace
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() >= 1 {
-            results.push(SearchResult {
-                name: parts[0].to_string(),
-                version: if parts.len() > 1 { parts[1].replace("(", "").replace(")", "") } else { "".to_string() },
-                bucket: if parts.len() > 2 { parts.last().unwrap_or(&"").replace("<", "").replace(">", "") } else { "".to_string() },
-                description: "".to_string(),
-            });
-        }
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).to_string());
     }
 
-    Ok(results)
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout_trimmed = stdout.trim();
+    if stdout_trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    serde_json::from_str::<Vec<SearchResult>>(stdout_trimmed)
+        .map_err(|e| format!("Failed to parse search results JSON: {e}. Output: {stdout_trimmed}"))
 }
 
 #[tauri::command]
