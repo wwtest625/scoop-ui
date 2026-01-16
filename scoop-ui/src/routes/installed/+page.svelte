@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { get } from 'svelte/store';
-    import { getInstalledApps, updateApp, getAppSizes, uninstallApp, checkUpdatesAsync, type ScoopApp } from '$lib/scoop';
+    import { getInstalledApps, updateApp, updateAllApps, getAppSizes, uninstallApp, checkUpdatesAsync, type ScoopApp } from '$lib/scoop';
     import { installedAppsStore, updatingAppsStore } from '$lib/stores';
     import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
     import ProgressModal from '$lib/components/ProgressModal.svelte';
@@ -40,8 +40,35 @@
         loading = false;
     }
 
-    // Fallback icon since `scoop export` doesn't provide icons
-    const DEFAULT_ICON = 'terminal';
+    // --- Aesthetic Helpers ---
+
+    function getAppInitials(name: string): string {
+        if (!name) return '?';
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    function getAppColor(name: string): string {
+        if (!name) return '#64748b';
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        // Generate HSL color with good saturation and lightness for "premium" look
+        const h = Math.abs(hash) % 360;
+        return `hsl(${h}, 70%, 45%)`; // 45% lightness for readable white text
+    }
+
+    function getAppBackground(name: string): string {
+        if (!name) return '#f1f5f9';
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const h = Math.abs(hash) % 360;
+        return `hsl(${h}, 80%, 96%)`; // Very light background for the row/avatar
+    }
+
+    // -------------------------
     
     // Refresh function now updates the store
     async function refreshApps() {
@@ -406,12 +433,15 @@
 
 <div class="installed-page">
     <header class="page-header">
-        <div class="header-top">
-            <div class="header-titles">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <h1 class="page-title">已安装</h1>
-                    <button 
-                        class="btn-refresh" 
+        <div class="header-content">
+            <div class="header-main">
+                <div class="title-section">
+                    <h1 class="page-title">
+                        已安装
+                        <span class="app-count">{installedApps.length}</span>
+                    </h1>
+                     <button 
+                        class="btn-icon" 
                         title="刷新列表"
                         disabled={loading}
                         on:click={refreshApps}
@@ -419,47 +449,46 @@
                         <span class="material-symbols-outlined" class:spinning={loading}>refresh</span>
                     </button>
                     {#if checkingUpdates}
-                        <div class="checking-updates-hint">
+                        <div class="status-badge checking">
                             <span class="material-symbols-outlined spin-slow">sync</span>
-                            <span>正在检查更新...</span>
+                            <span>检查更新...</span>
                         </div>
                     {/if}
+                </div>
+
+                <div class="actions-section">
                     {#if updatableCount > 0}
                         <button 
-                            class="btn-update-all" 
-                            title="更新所有应用"
+                            class="btn-primary" 
                             on:click={handleUpdateAllApps}
                         >
                             <span class="material-symbols-outlined">upgrade</span>
                             <span>全部更新 ({updatableCount})</span>
                         </button>
                     {/if}
-                </div>
-                <p class="page-subtitle">本地库共有 {installedApps.length} 个应用</p>
-            </div>
-            
-            <div class="search-container">
-                <div class="search-wrapper">
-                    <span class="material-symbols-outlined search-icon">search</span>
-                    <input class="search-input" placeholder="搜索应用名称 (如 git, nodejs)..." type="text"/>
-                    <div class="shortcut-hint"><kbd>⌘K</kbd></div>
+                    
+                    <div class="search-wrapper">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input class="search-input" placeholder="搜索应用..." type="text"/>
+                        <div class="shortcut-hint"><kbd>⌘K</kbd></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="filter-chips">
-            {#each filters as filter}
-                <button 
-                    class="filter-chip" 
-                    class:active={activeFilter === filter}
-                    on:click={() => activeFilter = filter}
-                >
-                    <span>{filter}</span>
-                    {#if filter === '可更新' && updatableCount > 0}
-                        <span class="badge">{updatableCount}</span>
-                    {/if}
-                </button>
-            {/each}
+            <div class="filter-bar">
+                {#each filters as filter}
+                    <button 
+                        class="filter-chip" 
+                        class:active={activeFilter === filter}
+                        on:click={() => activeFilter = filter}
+                    >
+                        <span>{filter}</span>
+                        {#if filter === '可更新' && updatableCount > 0}
+                            <span class="badge-dot"></span>
+                        {/if}
+                    </button>
+                {/each}
+            </div>
         </div>
     </header>
 
@@ -467,94 +496,104 @@
         <div class="list-container">
             <!-- Table Header -->
             <div class="list-header">
-                <div class="col-name">应用名称</div>
-                <div class="col-version">版本</div>
+                <div class="col-main">应用名称</div>
+                <div class="col-meta">版本 & Bucket</div>
                 <div class="col-action">操作</div>
             </div>
 
             <!-- List Items -->
             {#if loading}
-                <div class="p-8 text-center text-gray-500">Loading apps...</div>
+                <div class="state-empty">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
             {:else if error}
-                <div class="p-8 text-center text-red-500">
-                    <p>Error loading apps:</p>
-                    <pre class="text-xs mt-2 text-left bg-gray-100 p-2 rounded overflow-auto">{error}</pre>
+                <div class="state-error">
+                    <span class="material-symbols-outlined icon">error</span>
+                    <p>加载失败</p>
+                    <pre>{error}</pre>
                 </div>
             {:else if displayedApps.length === 0}
-                 <div class="p-8 text-center text-gray-500">No apps found.</div>
+                 <div class="state-empty">
+                    <span class="material-symbols-outlined icon">inbox</span>
+                    <p>没有找到应用</p>
+                 </div>
             {:else}
-                {#each displayedApps as app}
-                    <div class="list-item">
-                        <!-- Name & Icon -->
-                        <div class="col-name flex-row">
-                            <div class="app-icon-wrapper">
-                                <!-- Placeholder icon since scoop export doesn't provide it -->
-                                <span class="material-symbols-outlined app-icon-placeholder">terminal</span>
-                                {#if app.has_update}
-                                    <div class="update-dot"></div>
-                                {/if}
-                            </div>
-                            <div class="app-info">
-                                <h3 class="app-name">{app.name}</h3>
-                                <p class="app-desc">
-                                    {#if activeFilter === '最近安装'}
-                                        安装于 {formatRelativeTime(app.updated)}
-                                    {:else if activeFilter === '体积最大'}
-                                        大小: {formatSize(app.install_size)}
-                                    {:else}
-                                        {app.description || 'No description'}
+                <div class="app-list">
+                    {#each displayedApps as app}
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <div class="list-item" class:updating={updatingApps.has(app.name)}>
+                            <!-- Main Info -->
+                            <div class="col-main">
+                                <div class="app-avatar" style="background-color: {getAppColor(app.name)}">
+                                    <span>{getAppInitials(app.name)}</span>
+                                    {#if app.has_update}
+                                        <div class="avatar-badge"></div>
                                     {/if}
-                                </p>
+                                </div>
+                                <div class="app-info">
+                                    <h3 class="app-name">{app.name}</h3>
+                                    <p class="app-desc" title={app.description}>
+                                        {#if activeFilter === '最近安装'}
+                                            <span class="highlight">安装于 {formatRelativeTime(app.updated)}</span>
+                                            <span class="sep">•</span>
+                                        {:else if activeFilter === '体积最大'}
+                                            <span class="highlight">大小: {formatSize(app.install_size)}</span>
+                                            <span class="sep">•</span>
+                                        {/if}
+                                        {app.description || '暂无描述'}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Version -->
-                        <div class="col-version flex-col-center">
-                            <div class="version-row">
-                                <span class="ver-current">{app.version}</span>
+                            <!-- Meta -->
+                            <div class="col-meta">
+                                <div class="version-tag">
+                                    <span class="ver-num">{app.version}</span>
+                                </div>
+                                <span class="bucket-tag">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                    {app.bucket}
+                                </span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="col-action">
                                 {#if app.has_update}
-                                    <span class="update-badge">可更新</span>
+                                    <button 
+                                        class="btn-action update" 
+                                        title="更新应用"
+                                        disabled={updatingApps.has(app.name)}
+                                        on:click={() => handleUpdateApp(app.name)}
+                                    >
+                                        {#if updatingApps.has(app.name)}
+                                            <span class="material-symbols-outlined spinning">progress_activity</span>
+                                        {:else}
+                                            <span class="material-symbols-outlined">upgrade</span>
+                                        {/if}
+                                    </button>
                                 {/if}
-                            </div>
-                            <span class="bucket-name">{app.bucket}</span>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="col-action flex-end">
-                            {#if app.has_update}
                                 <button 
-                                    class="btn-update" 
-                                    title="更新应用"
-                                    disabled={updatingApps.has(app.name)}
-                                    on:click={() => handleUpdateApp(app.name)}
+                                    class="btn-action delete" 
+                                    title="卸载应用"
+                                    disabled={uninstallingApps.has(app.name)}
+                                    on:click={() => showUninstallDialog(app.name)}
                                 >
-                                    {#if updatingApps.has(app.name)}
+                                    {#if uninstallingApps.has(app.name)}
                                         <span class="material-symbols-outlined spinning">progress_activity</span>
                                     {:else}
-                                        <span class="material-symbols-outlined">upgrade</span>
+                                        <span class="material-symbols-outlined">delete</span>
                                     {/if}
-                                    <span>更新</span>
                                 </button>
-                            {/if}
-                            <button 
-                                class="btn-icon-only" 
-                                title="卸载"
-                                disabled={uninstallingApps.has(app.name)}
-                                on:click={() => showUninstallDialog(app.name)}
-                            >
-                                {#if uninstallingApps.has(app.name)}
-                                    <span class="material-symbols-outlined spinning">progress_activity</span>
-                                {:else}
-                                    <span class="material-symbols-outlined">delete</span>
-                                {/if}
-                            </button>
+                            </div>
                         </div>
-                    </div>
-                {/each}
+                    {/each}
+                </div>
             {/if}
         </div>
-
-        <div class="pagination">
+        
+         <div class="list-footer">
             <p>已显示 {displayedApps.length} 个应用</p>
         </div>
     </div>
@@ -584,81 +623,157 @@
 />
 
 <style>
+    :root {
+        --active-color: #2563eb;
+        --active-bg: #eff6ff;
+        --danger-color: #ef4444;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+    }
+
     .installed-page {
         display: flex;
         flex-direction: column;
         height: 100%;
-        position: relative;
+        background-color: #f8fafc; /* Lighter background */
     }
 
+    /* Header Styles */
     .page-header {
-        padding: 2rem 2rem 1rem 2rem;
-        background-color: var(--bg-light);
+        background-color: #ffffff;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem 0 2rem;
         flex-shrink: 0;
         z-index: 10;
+    }
+
+    .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
     }
 
-    .header-top {
+    .header-main {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
-        gap: 1rem;
+        align-items: center;
         flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    .header-titles {
+    .title-section {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        align-items: center;
+        gap: 1rem;
     }
 
     .page-title {
-        font-size: 1.875rem; /* 3xl */
-        font-weight: 900;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
         margin: 0;
-        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
-
-    .page-subtitle {
-        color: var(--text-muted);
+    
+    .app-count {
+        font-size: 0.875rem;
+        background-color: #f1f5f9;
+        color: var(--text-secondary);
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-weight: 600;
+    }
+    
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        color: var(--active-color);
+        background-color: var(--active-bg);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
         font-weight: 500;
-        margin: 0;
     }
 
-    .search-container {
-        width: 100%;
-        max-width: 24rem; /* max-w-sm */
+    .actions-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
 
+    /* Buttons */
+    .btn-icon {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 0.5rem;
+        border: 1px solid transparent;
+        color: var(--text-secondary);
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .btn-icon:hover {
+        background-color: #f1f5f9;
+        color: var(--text-primary);
+    }
+    
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background-color: var(--text-primary);
+        color: white;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    
+    .btn-primary:active {
+        transform: scale(0.98);
+    }
+
+    /* Search Input */
     .search-wrapper {
         position: relative;
         display: flex;
         align-items: center;
+        width: 16rem;
     }
 
     .search-input {
         width: 100%;
-        padding: 0.625rem 0.75rem 0.625rem 2.5rem;
-        border-radius: 0.75rem; /* xl */
-        border: none;
+        padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
         background-color: #ffffff;
         font-size: 0.875rem;
-        font-weight: 500;
-        outline: none;
-        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+        transition: all 0.2s;
     }
-
-    :global(.dark) .search-input {
-        background-color: var(--surface-dark);
-        color: #fff;
+    
+    .search-input:focus {
+        border-color: var(--active-color);
+        box-shadow: 0 0 0 2px var(--active-bg);
+        outline: none;
     }
 
     .search-icon {
         position: absolute;
-        left: 0.75rem;
+        left: 0.625rem;
+        font-size: 1.125rem;
         color: #94a3b8;
         pointer-events: none;
     }
@@ -667,368 +782,302 @@
         position: absolute;
         right: 0.5rem;
     }
-
+    
     .shortcut-hint kbd {
-        border: 1px solid var(--border);
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
         border-radius: 0.25rem;
-        padding: 0.125rem 0.375rem;
+        padding: 0.1rem 0.3rem;
         font-size: 0.625rem;
-        font-weight: 700;
-        color: #94a3b8;
+        font-family: inherit;
+        color: #64748b;
     }
 
-    .filter-chips {
+    /* Filter Bar */
+    .filter-bar {
         display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        padding-bottom: 0.25rem;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
     }
 
     .filter-chip {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.375rem 1rem;
-        border-radius: 9999px;
+        background: none;
+        border: none;
+        padding: 0.75rem 0;
         font-size: 0.875rem;
         font-weight: 500;
+        color: var(--text-secondary);
         cursor: pointer;
-        border: 1px solid var(--border);
-        background-color: #ffffff;
-        color: #475569;
-        transition: all 0.1s;
+        position: relative;
+        transition: color 0.2s;
     }
-
-    :global(.dark) .filter-chip {
-        background-color: var(--surface-dark);
-        color: #cbd5e1;
+    
+    .filter-chip:hover {
+        color: var(--text-primary);
     }
-
+    
     .filter-chip.active {
-        background-color: #0f172a;
-        color: #ffffff;
-        border-color: #0f172a;
+        color: var(--active-color);
+        font-weight: 600;
+    }
+    
+    .filter-chip.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--active-color);
+        border-radius: 2px 2px 0 0;
+    }
+    
+    .badge-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background-color: var(--active-color);
+        border-radius: 50%;
+        margin-left: 0.25rem;
+        vertical-align: middle;
     }
 
-    :global(.dark) .filter-chip.active {
-        background-color: #ffffff;
-        color: #0f172a;
-        border-color: #ffffff;
-    }
-
-    .badge {
-        background-color: rgba(25, 127, 230, 0.1);
-        color: var(--primary);
-        padding: 0 0.375rem;
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
+    /* Content Area */
     .content-area {
         flex: 1;
         overflow-y: auto;
-        padding: 0 2rem 2rem 2rem;
+        padding: 2rem;
     }
-
+    
     .list-container {
+        max-width: 1200px;
+        margin: 0 auto;
         background-color: #ffffff;
         border-radius: 1rem;
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         overflow: hidden;
-        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-        max-width: 64rem; /* 5xl */
-        margin: 0 auto;
     }
 
-    :global(.dark) .list-container {
-        background-color: var(--bg-subtle);
-    }
-
-    /* Grid Layout for List */
-    .list-header, .list-item {
-        display: grid;
-        grid-template-columns: 5fr 3fr 4fr;
-        gap: 1rem;
-        align-items: center;
-        padding: 0 1.5rem;
-    }
-
+    /* Grid Layout */
     .list-header {
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
+        display: grid;
+        grid-template-columns: 3fr 1.5fr auto;
+        padding: 1rem 1.5rem;
         background-color: #f8fafc;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--border-color);
         font-size: 0.75rem;
         font-weight: 600;
-        color: #64748b;
+        color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-
-    :global(.dark) .list-header {
-        background-color: rgba(30, 41, 59, 0.3);
-    }
-
+    
     .list-item {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--border);
-        transition: background-color 0.1s;
+        display: grid;
+        grid-template-columns: 3fr 1.5fr auto;
+        padding: 1rem 1.5rem;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.15s ease-out;
     }
-
+    
+    .list-item:last-child {
+        border-bottom: none;
+    }
+    
     .list-item:hover {
         background-color: #f8fafc;
     }
 
-    :global(.dark) .list-item:hover {
-        background-color: rgba(30, 41, 59, 0.4);
+    /* Columns */
+    .col-main {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        overflow: hidden; /* Prevent text overflow */
+    }
+    
+    .col-meta {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start; /* Left align text */
+        gap: 0.25rem;
+    }
+    
+    .col-action {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .flex-row { display: flex; align-items: center; gap: 1rem; }
-    .flex-col-center { display: flex; flex-direction: column; justify-content: center; }
-    .flex-end { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
-
-    .app-icon-wrapper {
-        position: relative;
-        width: 3rem; height: 3rem;
-        flex-shrink: 0;
-    }
-
-    .app-icon {
-        width: 100%; height: 100%;
+    /* App Elements */
+    .app-avatar {
+        width: 3rem;
+        height: 3rem;
         border-radius: 0.75rem;
-        object-fit: cover;
-        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative;
     }
-
-    .update-dot {
+    
+    .avatar-badge {
         position: absolute;
-        top: -0.125rem; right: -0.125rem;
-        width: 0.75rem; height: 0.75rem;
-        background-color: #ef4444;
-        border-radius: 9999px;
-        border: 2px solid #ffffff;
+        top: -2px;
+        right: -2px;
+        width: 10px;
+        height: 10px;
+        background-color: var(--active-color);
+        border: 2px solid white;
+        border-radius: 50%;
     }
-    :global(.dark) .update-dot { border-color: var(--surface-dark); }
 
     .app-info {
-        min-width: 0;
-        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0; /* Enable truncation */
     }
 
     .app-name {
+        margin: 0;
         font-size: 1rem;
         font-weight: 700;
-        margin: 0;
-        color: var(--text-main);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        color: var(--text-primary);
+        line-height: 1.4;
     }
 
     .app-desc {
-        font-size: 0.75rem;
-        color: var(--text-muted);
         margin: 0;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .version-row {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .ver-current { font-size: 0.875rem; font-weight: 500; color: #334155; }
-    :global(.dark) .ver-current { color: #cbd5e1; }
-
-    .ver-old { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); text-decoration: line-through; }
-    .ver-arrow { font-size: 0.75rem; color: var(--text-muted); }
-    .ver-new { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
-
-    .bucket-name {
-        font-size: 0.625rem;
-        color: var(--text-muted);
-    }
-
-    .btn-primary {
-        background-color: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 9999px;
-        height: 2.25rem;
-        padding: 0 1.25rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: opacity 0.1s;
-    }
-    .btn-primary:active { transform: scale(0.95); }
-
-    .btn-secondary {
-        background-color: #f1f5f9;
-        color: #0f172a;
-        border: none;
-        border-radius: 9999px;
-        height: 2.25rem;
-        padding: 0 1.25rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    :global(.dark) .btn-secondary {
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-    .btn-secondary:hover { background-color: #e2e8f0; }
-
-    .btn-icon-only {
-        background: transparent;
-        border: none;
-        width: 2.25rem; height: 2.25rem;
-        border-radius: 9999px;
-        display: flex; align-items: center; justify-content: center;
-        color: #94a3b8;
-        cursor: pointer;
-    }
-    .btn-icon-only:hover { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-    .btn-icon { font-size: 18px; }
-
-    .pagination {
-        margin-top: 1.5rem;
-        display: flex;
-        justify-content: center;
-        color: var(--text-muted);
-        font-size: 0.875rem;
-    }
-
-    .app-icon-placeholder {
-        width: 100%; height: 100%;
-        border-radius: 0.75rem;
-        background-color: #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        font-size: 24px;
-        border: 1px solid var(--border);
-    }
-    :global(.dark) .app-icon-placeholder {
-        background-color: var(--surface-dark);
-        color: #64748b;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        line-height: 1.4;
     }
     
-    .update-badge {
-        display: inline-block;
+    .app-desc .sep {
+        margin: 0 0.25rem;
+        opacity: 0.5;
+    }
+    
+    .highlight {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    /* Meta Tags */
+    .version-tag {
+        display: inline-flex;
+        
+    }
+    
+    .ver-num {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace; /* Monospaced for numbers */
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        background-color: #f1f5f9;
         padding: 0.125rem 0.5rem;
         border-radius: 0.25rem;
-        font-size: 0.625rem;
-        font-weight: 700;
-        background-color: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        margin-left: 0.5rem;
     }
-    
-    .btn-update {
+
+    .bucket-tag {
+        font-size: 0.75rem;
+        color: #94a3b8;
         display: flex;
         align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.875rem;
-        border-radius: 0.5rem;
+        gap: 0.25rem;
+    }
+    
+    .bucket-tag span {
         font-size: 0.875rem;
-        font-weight: 600;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        border: 1px solid transparent;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        border: none;
-        background-color: #197fe6;
-        color: white;
         transition: all 0.2s;
+        color: var(--text-secondary);
     }
     
-    .btn-update:hover:not(:disabled) {
-        background-color: #1565c0;
-        transform: translateY(-1px);
+    .btn-action:hover {
+        background-color: white;
+        border-color: var(--border-color);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     
-    .btn-update:active:not(:disabled) {
-        transform: translateY(0);
+    .btn-action.update:hover {
+        color: var(--active-color);
+        background-color: var(--active-bg);
+        border-color: transparent;
     }
     
-    .btn-update:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+    .btn-action.delete:hover {
+        color: var(--danger-color);
+        background-color: #fef2f2;
+        border-color: transparent;
+    }
+
+    /* Empty States */
+    .state-empty {
+        padding: 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
     }
     
-    .btn-update .material-symbols-outlined {
-        font-size: 18px;
+    .state-empty .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
     }
     
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
+    .state-error {
+        padding: 3rem;
+        text-align: center;
+        color: var(--danger-color);
     }
     
+    .list-footer {
+        max-width: 1200px;
+        margin: 1rem auto 0;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    /* Spinners */
     .spinning {
         animation: spin 1s linear infinite;
     }
     
-    .btn-refresh {
-        background: var(--primary);
-        border: none;
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: white;
-        transition: all 0.2s;
+    .spin-slow {
+        animation: spin 2s linear infinite;
     }
     
-    .btn-refresh:hover:not(:disabled) {
-        opacity: 0.9;
-    }
-    
-    :global(.dark) .btn-refresh:hover:not(:disabled) {
-        opacity: 0.9;
-    }
-    
-    .btn-refresh:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-    
-    .btn-refresh .material-symbols-outlined {
-        font-size: 24px;
-    }
-    
-    .btn-update-all {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        border: none;
-        background-color: var(--primary);
-        color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: opacity 0.2s;
-    }
-    
-    .btn-update-all:hover {
-        opacity: 0.9;
-    }
-    
-    .btn-update-all .material-symbols-outlined {
-        font-size: 20px;
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 </style>
